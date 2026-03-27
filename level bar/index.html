@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سيستم جرد البار</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --espresso: #1a0a00;
+    --roast: #2d1200;
+    --mahogany: #3d1f0a;
+    --caramel: #8b4513;
+    --gold: #c8923a;
+    --cream: #f5e6d0;
+    --foam: #faf3e8;
+    --accent: #e8a855;
+    --green: #4caf7d;
+    --red: #e05c5c;
+    --blue: #5c9de0;
+    --text-light: #f5e6d0;
+    --text-dim: #a08060;
+    --border: rgba(200,146,58,0.2);
+    --card: rgba(45,18,0,0.8);
+    --card-hover: rgba(61,31,10,0.9);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--espresso);
+    color: var(--cream);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(139,69,19,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(200,146,58,0.08) 0%, transparent 50%);
+  }
+
+  /* Header */
+  .header {
+    background: rgba(29,11,0,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--gold), var(--caramel));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .logo-img {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  .logo-text h1 { font-size: 18px; font-weight: 900; color: var(--cream); line-height: 1; }
+  .logo-text p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  .month-badge {
+    background: var(--mahogany);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .month-badge:hover { background: var(--caramel); color: var(--foam); }
+
+  /* Navigation */
+  .nav {
+    background: rgba(29,11,0,0.7);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .nav-btn {
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-btn:hover { color: var(--cream); }
+  .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* Main */
+  .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+  /* Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+
+  .stat-card:hover { background: var(--card-hover); transform: translateY(-2px); }
+
+  .stat-label { font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 900; }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Rankings */
+  .rankings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .ranking-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .ranking-title {
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed rgba(200,146,58,0.2);
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ranking-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(200,146,58,0.1);
+    font-size: 13px;
+  }
+  .ranking-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  /* Section */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), var(--caramel));
+    color: var(--espresso);
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(200,146,58,0.3); }
+
+  .btn-green { background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .btn-green:hover { background: rgba(76,175,125,0.25); }
+
+  .btn-red { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+  .btn-red:hover { background: rgba(224,92,92,0.25); }
+
+  .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--cream); }
+
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 7px; }
+
+  /* Table */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .table-head {
+    background: rgba(45,18,0,0.9);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .category-label {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .cat-bar { background: rgba(200,146,58,0.2); color: var(--gold); }
+  .cat-fridge { background: rgba(92,157,224,0.2); color: var(--blue); }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    text-align: right;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    background: rgba(29,11,0,0.4);
+  }
+
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(200,146,58,0.07);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(200,146,58,0.04); }
+
+  .product-name { font-weight: 700; color: var(--foam); }
+  .unit-badge {
+    font-size: 11px;
+    background: rgba(255,255,255,0.06);
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    margin-right: 6px;
+  }
+
+  .qty-bought { color: var(--green); font-weight: 700; }
+  .qty-sold { color: var(--red); font-weight: 700; }
+  .qty-remain { color: var(--gold); font-weight: 900; font-size: 15px; }
+  .qty-low { color: var(--red); }
+
+  .progress-bar {
+    width: 80px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal {
+    background: var(--roast);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp 0.25s ease;
+  }
+
+  .modal-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--cream);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--cream);
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus { border-color: var(--gold); background: rgba(200,146,58,0.05); }
+
+  select option { background: var(--roast); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+
+  /* Tabs content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* History log */
+  .log-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+
+  .log-item:hover { background: var(--card-hover); }
+
+  .log-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .log-icon.buy { background: rgba(76,175,125,0.15); }
+  .log-icon.sell { background: rgba(224,92,92,0.15); }
+
+  .log-details { flex: 1; }
+  .log-title { font-size: 14px; font-weight: 700; }
+  .log-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .log-qty { font-weight: 900; font-size: 15px; }
+  .log-date { font-size: 11px; color: var(--text-dim); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state p { font-size: 15px; }
+
+  /* Month picker */
+  .month-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+
+  .month-nav button {
+    background: none;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+  }
+
+  .month-nav span { font-size: 14px; font-weight: 700; color: var(--cream); }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn.active { background: var(--gold); color: var(--espresso); border-color: var(--gold); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--caramel); border-radius: 3px; }
+
+  .no-data { text-align: center; padding: 30px; color: var(--text-dim); font-size: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--mahogany);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream);
+    z-index: 9999;
+    transition: transform 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(200,146,58,0.06);
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Admin Badge */
+  .admin-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .admin-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+  }
+
+  .admin-status.logged-out {
+    background: rgba(224,92,92,0.1);
+    color: var(--red);
+    border-color: rgba(224,92,92,0.3);
+  }
+  .admin-status.logged-out:hover { background: rgba(224,92,92,0.2); }
+
+  .admin-status.logged-in {
+    background: rgba(76,175,125,0.1);
+    color: var(--green);
+    border-color: rgba(76,175,125,0.3);
+  }
+  .admin-status.logged-in:hover { background: rgba(76,175,125,0.2); }
+
+  /* Lock overlay on buttons */
+  .locked-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .locked-hint:hover { background: rgba(255,255,255,0.08); color: var(--cream); }
+
+  /* Password input wrapper */
+  .pw-wrap {
+    position: relative;
+  }
+  .pw-wrap input { padding-left: 42px; }
+  .pw-eye {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+  }
+  .pw-eye:hover { color: var(--gold); }
+
+  .pin-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 16px 0;
+  }
+
+  .pin-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .numpad-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--cream);
+    font-family: 'Cairo', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .numpad-btn:hover { background: rgba(200,146,58,0.15); border-color: var(--gold); color: var(--gold); }
+  .numpad-btn:active { transform: scale(0.95); }
+  .numpad-btn.del { font-size: 18px; color: var(--red); }
+  .numpad-btn.del:hover { background: rgba(224,92,92,0.15); border-color: var(--red); }
+  .numpad-btn.empty { visibility: hidden; }
+
+  .login-error {
+    text-align: center;
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+    min-height: 20px;
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .change-pw-link {
+    text-align: center;
+    margin-top: 16px;
+  }
+  .change-pw-link button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .change-pw-link button:hover { color: var(--gold); }
+
+  /* ===== FULL HISTORY SECTION ===== */
+  .history-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 180px;
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--cream);
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-box input:focus { border-color: var(--gold); }
+
+  .search-box .s-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  .hist-filter-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .hist-filter-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Month group header */
+  .month-group {
+    margin-bottom: 28px;
+  }
+
+  .month-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, rgba(200,146,58,0.12), rgba(45,18,0,0.6));
+    border: 1px solid rgba(200,146,58,0.25);
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .month-group-header:hover { background: linear-gradient(135deg, rgba(200,146,58,0.2), rgba(45,18,0,0.8)); }
+
+  .month-group-header.collapsed { border-radius: 12px; }
+
+  .month-group-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .month-group-title .count-badge {
+    font-size: 11px;
+    background: rgba(200,146,58,0.2);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .month-group-stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .mg-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .mg-stat-val { font-size: 15px; font-weight: 900; }
+  .mg-stat-lbl { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+
+  .collapse-arrow {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+    margin-right: 8px;
+  }
+
+  .month-group-body {
+    border: 1px solid rgba(200,146,58,0.15);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    background: rgba(20,8,0,0.4);
+  }
+
+  .month-group-body.collapsed { display: none; }
+
+  /* History table inside month group */
+  .hist-table { width: 100%; border-collapse: collapse; }
+
+  .hist-table th {
+    text-align: right;
+    padding: 10px 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 700;
+    border-bottom: 1px solid rgba(200,146,58,0.1);
+    background: rgba(29,11,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hist-table td {
+    padding: 11px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(200,146,58,0.05);
+    vertical-align: middle;
+  }
+
+  .hist-table tr:last-child td { border-bottom: none; }
+
+  .hist-table tr:hover td { background: rgba(200,146,58,0.04); }
+
+  .type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .type-pill.buy { background: rgba(76,175,125,0.15); color: var(--green); }
+  .type-pill.sell { background: rgba(224,92,92,0.15); color: var(--red); }
+
+  .hist-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .hist-qty-buy { color: var(--green); font-weight: 800; font-size: 14px; }
+  .hist-qty-sell { color: var(--red); font-weight: 800; font-size: 14px; }
+
+  .hist-summary-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    background: rgba(200,146,58,0.05);
+    border-top: 1px solid rgba(200,146,58,0.12);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .hist-total-row { display: flex; gap: 20px; }
+  .hist-total-item { display: flex; align-items: center; gap: 5px; }
+
+  .no-results {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-dim);
+  }
+
+  .no-results .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .no-results p { font-size: 14px; }
+
+  .hist-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .hstat { text-align: center; }
+  .hstat-val { font-size: 22px; font-weight: 900; }
+  .hstat-lbl { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  @media (max-width: 600px) {
+    .main { padding: 16px; }
+    .form-row { grid-template-columns: 1fr; }
+    th, td { padding: 10px 10px; font-size: 13px; }
+    .month-group-stats { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <img src="logo.png" alt="Level Up" class="logo-img" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><rect width=\'40\' height=\'40\' fill=\'#c8923a\'/><text x=\'50%\' y=\'50%\' font-size=\'20\' text-anchor=\'middle\' dy=\'.3em\' fill=\'#fff\'>LU</text></svg>'">
+    <div class="logo-text">
+      <h1>جرد البار - Level Up</h1>
+      <p>إدارة المخزون الشهري | البارستا: عمر</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">◀</button>
+      <span id="currentMonthLabel">—</span>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <div id="manageAdminsBtn" class="admin-status" style="display:none; color:var(--blue); border-color:var(--blue); background:rgba(92,157,224,0.1);" onclick="openManageAdminsModal()">
+      <span>👥</span><span>إدارة المشرفين</span>
+    </div>
+    <div id="adminStatusBtn" class="admin-status logged-out" onclick="handleAdminClick()">
+      <span id="adminIcon">🔒</span>
+      <span id="adminLabel">دخول الأدمن</span>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('dashboard', this)">📊 الرئيسية</button>
+  <button class="nav-btn" onclick="showTab('products', this)">📦 المنتجات</button>
+  <button class="nav-btn" onclick="showTab('purchases', this)">🛒 المشتريات</button>
+  <button class="nav-btn" onclick="showTab('sales', this)">💸 المبيعات</button>
+  <button class="nav-btn" onclick="showTab('history', this)">📋 السجل</button>
+</div>
+
+<div class="main">
+
+  <!-- Dashboard -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div id="dashboardTable"></div>
+  </div>
+
+  <!-- Products -->
+  <div id="tab-products" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">📦 إدارة المنتجات</div>
+      <div id="addProductBtn"></div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterProducts('all', this)">الكل</button>
+      <button class="filter-btn" onclick="filterProducts('bar', this)">☕ منتجات البار</button>
+      <button class="filter-btn" onclick="filterProducts('fridge', this)">🧊 الثلاجة</button>
+    </div>
+    <div id="productsTable"></div>
+  </div>
+
+  <!-- Purchases -->
+  <div id="tab-purchases" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">🛒 تسجيل المشتريات</div>
+      <div id="addPurchaseBtn"></div>
+    </div>
+    <div id="purchasesLog"></div>
+  </div>
+
+  <!-- Sales -->
+  <div id="tab-sales" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">💸 تسجيل المبيعات</div>
+      <div id="addSaleBtn"></div>
+    </div>
+    <div id="salesLog"></div>
+  </div>
+
+  <!-- History -->
+  <div id="tab-history" class="tab-content">
+
+    <!-- Global stats bar -->
+    <div class="hist-stats-bar" id="histStatsBar"></div>
+
+    <!-- Toolbar: search + filters -->
+    <div class="history-toolbar">
+      <div class="search-box">
+        <span class="s-icon">🔍</span>
+        <input id="histSearch" type="text" placeholder="بحث باسم المنتج أو الملاحظة..." oninput="renderHistory()">
+      </div>
+    </div>
+
+    <div class="hist-filter-row">
+      <span class="hist-filter-label">النوع:</span>
+      <button class="filter-btn active" id="hf-all"    onclick="setHistFilter('type','all',this)">الكل</button>
+      <button class="filter-btn"        id="hf-buy"    onclick="setHistFilter('type','purchase',this)">🛒 مشتريات</button>
+      <button class="filter-btn"        id="hf-sell"   onclick="setHistFilter('type','sale',this)">💸 مبيعات</button>
+      &nbsp;
+      <span class="hist-filter-label">الفئة:</span>
+      <button class="filter-btn active" id="hf-catall" onclick="setHistFilter('cat','all',this)">الكل</button>
+      <button class="filter-btn"        id="hf-catbar" onclick="setHistFilter('cat','bar',this)">☕ البار</button>
+      <button class="filter-btn"        id="hf-catfr"  onclick="setHistFilter('cat','fridge',this)">🧊 الثلاجة</button>
+    </div>
+
+    <div id="historyLog"></div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div id="modalOverlay" class="modal-overlay" style="display:none;" onclick="closeModalOutside(event)">
+  <div class="modal" id="modalBox">
+    <!-- dynamic content -->
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ================== DATA STORE ==================
+let data = { products: [], transactions: [], admins: [] };
+let currentMonth = '';
+let currentFilter = 'all';
+let isAdmin = false;
+let currentAdmin = null;
+let pinBuffer = '';
+let histFilter = { type: 'all', cat: 'all' };
+
+const DEFAULT_PASS_HASH = hashStr('1234');
+
+// ================== SIMPLE HASH ==================
+function hashStr(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
+
+// ================== INIT ==================
+function init() {
+  const saved = localStorage.getItem('barInventory');
+  if (saved) { try { data = JSON.parse(saved); } catch(e) {} }
+  if (!data.admins || data.admins.length === 0) {
+    const oldHash = localStorage.getItem('barAdminHash') || DEFAULT_PASS_HASH;
+    data.admins = [{ id: '1', name: 'عمر بارستا', pin: oldHash }];
+  } else {
+    let mainAdmin = data.admins.find(a => a.id === '1');
+    if (mainAdmin && mainAdmin.name === 'المدير') {
+      mainAdmin.name = 'عمر بارستا';
+      localStorage.setItem('barInventory', JSON.stringify(data));
+    }
+  }
+  const now = new Date();
+  currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  updateMonthLabel();
+  updateAdminUI();
+  renderAll();
+}
+
+function save() { localStorage.setItem('barInventory', JSON.stringify(data)); }
+
+function updateMonthLabel() {
+  const [y, m] = currentMonth.split('-');
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('currentMonthLabel').textContent = `${months[parseInt(m)-1]} ${y}`;
+}
+
+function changeMonth(dir) {
+  const [y, m] = currentMonth.split('-').map(Number);
+  const d = new Date(y, m - 1 + dir, 1);
+  currentMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  updateMonthLabel();
+  renderAll();
+}
+
+// ================== ADMIN UI ==================
+function updateAdminUI() {
+  const btn = document.getElementById('adminStatusBtn');
+  document.getElementById('adminIcon').textContent = isAdmin ? '🔓' : '🔒';
+  document.getElementById('adminLabel').textContent = isAdmin ? (currentAdmin.name + ' · خروج') : 'دخول الأدمن';
+  btn.className = 'admin-status ' + (isAdmin ? 'logged-in' : 'logged-out');
+  const manageBtn = document.getElementById('manageAdminsBtn');
+  if (manageBtn) manageBtn.style.display = (isAdmin && currentAdmin.id === '1') ? 'flex' : 'none';
+
+  // Action buttons
+  const addProd = document.getElementById('addProductBtn');
+  const addPurch = document.getElementById('addPurchaseBtn');
+  const addSale = document.getElementById('addSaleBtn');
+
+  if (isAdmin) {
+    addProd.innerHTML = `<button class="btn btn-primary" onclick="openModal('product')">+ إضافة منتج</button>`;
+    addPurch.innerHTML = `<button class="btn btn-green" onclick="openModal('purchase')">+ تسجيل شراء</button>`;
+    addSale.innerHTML = `<button class="btn btn-red" onclick="openModal('sale')">+ تسجيل بيع</button>`;
+  } else {
+    const lockHint = `<span class="locked-hint" onclick="handleAdminClick()">🔒 يتطلب صلاحية الأدمن</span>`;
+    addProd.innerHTML = lockHint;
+    addPurch.innerHTML = lockHint;
+    addSale.innerHTML = lockHint;
+  }
+
+  renderAll();
+}
+
+function handleAdminClick() {
+  if (isAdmin) {
+    // Logout
+    isAdmin = false;
+    currentAdmin = null;
+    updateAdminUI();
+    showToast('👋 تم تسجيل الخروج');
+  } else {
+    openLoginModal();
+  }
+}
+
+// ================== CALCULATIONS ==================
+function getStats(productId) {
+  const monthTx = data.transactions.filter(t => t.month === currentMonth && t.productId === productId);
+  const bought = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
+  const sold = monthTx.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
+  return { bought, sold, remain: bought - sold };
+}
+
+function getTotalStats() {
+  const monthTx = data.transactions.filter(t => t.month === currentMonth);
+  const totalBought = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
+  const totalSold = monthTx.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
+  return { totalBought, totalSold, totalRemain: totalBought - totalSold, products: data.products.length };
+}
+
+// ================== RENDER ==================
+function renderAll() {
+  renderDashboard();
+  renderProducts();
+  renderPurchases();
+  renderSales();
+  renderHistory();
+}
+
+function renderDashboard() {
+  const { totalBought, totalSold, totalRemain, products } = getTotalStats();
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">📦 إجمالي المشتريات</div><div class="stat-value green">${totalBought}</div><div class="stat-sub">وحدة هذا الشهر</div></div>
+    <div class="stat-card"><div class="stat-label">💸 إجمالي المبيعات</div><div class="stat-value red">${totalSold}</div><div class="stat-sub">وحدة هذا الشهر</div></div>
+    <div class="stat-card"><div class="stat-label">🗃️ المتبقي</div><div class="stat-value gold">${totalRemain}</div><div class="stat-sub">وحدة في المخزن</div></div>
+    <div class="stat-card"><div class="stat-label">🏷️ عدد المنتجات</div><div class="stat-value blue">${products}</div><div class="stat-sub">منتج مسجل</div></div>
+  `;
+
+  // Rankings calculations
+  const ranked = data.products.map(p => {
+    const { bought, sold } = getStats(p.id);
+    return { name: p.name, bought, sold, totalMove: bought + sold, unit: p.unit };
+  });
+
+  const topSold = [...ranked].sort((a,b) => b.sold - a.sold).filter(x => x.sold > 0).slice(0, 5);
+  const topBought = [...ranked].sort((a,b) => b.bought - a.bought).filter(x => x.bought > 0).slice(0, 5);
+  const leastMoved = [...ranked].sort((a,b) => a.totalMove - b.totalMove).slice(0, 5);
+
+  const renderRank = (list, key, color, prefix) => list.length 
+    ? list.map(x => `<div class="ranking-item"><span style="color:var(--foam);font-weight:600;padding-left:10px">${x.name}</span><span style="color:var(--${color});font-weight:bold;white-space:nowrap">${prefix}${x[key]} <span style="font-size:10px">${x.unit}</span></span></div>`).join('') 
+    : '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:12px">لا توجد بيانات متاحة</div>';
+
+  let html = '';
+  if (data.products.length > 0) {
+    html += `
+      <div class="rankings-grid">
+        <div class="ranking-card">
+          <div class="ranking-title" style="color:var(--red)">🔥 الأعلى مبيعاً هذا الشهر</div>
+          ${renderRank(topSold, 'sold', 'red', '-')}
+        </div>
+        <div class="ranking-card">
+          <div class="ranking-title" style="color:var(--green)">🛒 الأكثر شراءً هذا الشهر</div>
+          ${renderRank(topBought, 'bought', 'green', '+')}
+        </div>
+        <div class="ranking-card">
+          <div class="ranking-title" style="color:var(--gold)">📉 الأقل طلباً (ركود)</div>
+          ${renderRank(leastMoved, 'totalMove', 'text-dim', '')}
+        </div>
+      </div>
+    `;
+  }
+  
+  const cats = [
+    { key: 'bar', label: '☕ منتجات البار', cls: 'cat-bar' },
+    { key: 'fridge', label: '🧊 منتجات الثلاجة / سوفت درينك', cls: 'cat-fridge' }
+  ];
+
+  cats.forEach(cat => {
+    const prods = data.products.filter(p => p.category === cat.key);
+    if (!prods.length) return;
+    let rows = '', sumB = 0, sumS = 0, sumR = 0;
+    prods.forEach(p => {
+      const { bought, sold, remain } = getStats(p.id);
+      sumB += bought; sumS += sold; sumR += remain;
+      const pct = bought > 0 ? Math.max(0, Math.min(100, (remain / bought) * 100)) : 0;
+      const barColor = remain <= 0 ? '#e05c5c' : pct < 30 ? '#e8a855' : '#4caf7d';
+      rows += `<tr><td><div style="display:flex;align-items:center;flex-wrap:wrap"><span class="product-name" style="margin-left:16px">${p.name}</span><span class="unit-badge" style="margin:0;white-space:nowrap;margin-right:auto">${p.unit}</span></div></td><td class="qty-bought">+${bought}</td><td class="qty-sold">-${sold}</td><td class="${remain <= 0 ? 'qty-low' : 'qty-remain'}">${remain}</td><td><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div></td></tr>`;
+    });
+    html += `<div class="table-wrap"><div class="table-head"><div class="section-title" style="font-size:14px">${cat.label}</div><span class="category-label ${cat.cls}">${prods.length} منتج</span></div><table><thead><tr><th>المنتج</th><th>المشتريات</th><th>المبيعات</th><th>المتبقي</th><th>النسبة</th></tr></thead><tbody>${rows}</tbody></table><div class="summary-row"><span>الإجمالي</span><span style="color:var(--green)">+${sumB}</span><span style="color:var(--red)">-${sumS}</span><span style="color:var(--gold);font-weight:900">${sumR} متبقي</span></div></div>`;
+  });
+
+  if (!data.products.length) html = `<div class="empty-state"><div class="icon">📦</div><p>لا توجد منتجات بعد. ابدأ بإضافة منتجات من تبويب "المنتجات"</p></div>`;
+  document.getElementById('dashboardTable').innerHTML = html;
+}
+
+function renderProducts() {
+  const filtered = currentFilter === 'all' ? data.products : data.products.filter(p => p.category === currentFilter);
+  const cats = [
+    { key: 'bar', label: '☕ منتجات البار', cls: 'cat-bar' },
+    { key: 'fridge', label: '🧊 الثلاجة / سوفت درينك', cls: 'cat-fridge' }
+  ];
+  let html = '';
+  cats.forEach(cat => {
+    const prods = filtered.filter(p => p.category === cat.key);
+    if (!prods.length) return;
+    const rows = prods.map(p => `
+      <tr>
+        <td><span class="product-name">${p.name}</span></td>
+        <td><span class="category-label ${cat.cls}">${cat.label}</span></td>
+        <td><span class="unit-badge" style="font-size:13px">${p.unit}</span></td>
+        <td>${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>` : `<span style="color:var(--text-dim);font-size:12px">🔒</span>`}</td>
+      </tr>`).join('');
+    html += `<div class="table-wrap" style="margin-bottom:16px"><div class="table-head"><div class="section-title" style="font-size:14px">${cat.label}</div><span class="category-label ${cat.cls}">${prods.length} منتج</span></div><table><thead><tr><th>الاسم</th><th>الفئة</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  });
+  if (!filtered.length) html = `<div class="empty-state"><div class="icon">📦</div><p>لا توجد منتجات. اضغط "+ إضافة منتج" للبدء</p></div>`;
+  document.getElementById('productsTable').innerHTML = html;
+}
+
+function renderPurchases() {
+  const purchases = data.transactions.filter(t => t.type === 'purchase' && t.month === currentMonth).reverse();
+  if (!purchases.length) { document.getElementById('purchasesLog').innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>لا توجد مشتريات مسجلة هذا الشهر</p></div>`; return; }
+  document.getElementById('purchasesLog').innerHTML = purchases.map(t => {
+    const p = data.products.find(x => x.id === t.productId);
+    return `<div class="log-item"><div class="log-icon buy">🛒</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'شراء'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--green)">+${t.qty} ${p ? p.unit : ''}</div>${isAdmin ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
+  }).join('');
+}
+
+function renderSales() {
+  const sales = data.transactions.filter(t => t.type === 'sale' && t.month === currentMonth).reverse();
+  if (!sales.length) { document.getElementById('salesLog').innerHTML = `<div class="empty-state"><div class="icon">💸</div><p>لا توجد مبيعات مسجلة هذا الشهر</p></div>`; return; }
+  document.getElementById('salesLog').innerHTML = sales.map(t => {
+    const p = data.products.find(x => x.id === t.productId);
+    return `<div class="log-item"><div class="log-icon sell">💸</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'بيع'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--red)">-${t.qty} ${p ? p.unit : ''}</div>${isAdmin ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const searchQ = (document.getElementById('histSearch')?.value || '').trim().toLowerCase();
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  // Build filtered list
+  let all = [...data.transactions].sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Type filter
+  if (histFilter.type !== 'all') all = all.filter(t => t.type === histFilter.type);
+
+  // Category filter
+  if (histFilter.cat !== 'all') {
+    const catIds = new Set(data.products.filter(p => p.category === histFilter.cat).map(p => p.id));
+    all = all.filter(t => catIds.has(t.productId));
+  }
+
+  // Search filter
+  if (searchQ) {
+    all = all.filter(t => {
+      const p = data.products.find(x => x.id === t.productId);
+      const name = p ? p.name.toLowerCase() : '';
+      const note = (t.note || '').toLowerCase();
+      return name.includes(searchQ) || note.includes(searchQ);
+    });
+  }
+
+  // Global stats (from full unfiltered)
+  const allTx = data.transactions;
+  const totalBuy = allTx.filter(t=>t.type==='purchase').reduce((s,t)=>s+t.qty,0);
+  const totalSell = allTx.filter(t=>t.type==='sale').reduce((s,t)=>s+t.qty,0);
+  const allMonths = [...new Set(allTx.map(t=>t.month))];
+  const statsBar = document.getElementById('histStatsBar');
+  if (statsBar) {
+    statsBar.innerHTML = `
+      <div class="hstat"><div class="hstat-val" style="color:var(--blue)">${allTx.length}</div><div class="hstat-lbl">إجمالي العمليات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--green)">${totalBuy}</div><div class="hstat-lbl">إجمالي المشتريات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--red)">${totalSell}</div><div class="hstat-lbl">إجمالي المبيعات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--gold)">${totalBuy - totalSell}</div><div class="hstat-lbl">الرصيد الكلي</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--accent)">${allMonths.length}</div><div class="hstat-lbl">عدد الأشهر</div></div>
+    `;
+  }
+
+  if (!all.length) {
+    document.getElementById('historyLog').innerHTML = `<div class="no-results"><div class="icon">📋</div><p>${searchQ ? 'لا توجد نتائج للبحث' : 'لا توجد عمليات مسجلة'}</p></div>`;
+    return;
+  }
+
+  // Group by month
+  const grouped = {};
+  all.forEach(t => {
+    if (!grouped[t.month]) grouped[t.month] = [];
+    grouped[t.month].push(t);
+  });
+
+  const sortedMonths = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+  let html = '';
+
+  sortedMonths.forEach(month => {
+    const txs = grouped[month];
+    const [y, m] = month.split('-');
+    const monthName = `${months[parseInt(m)-1]} ${y}`;
+    const mBuy  = txs.filter(t=>t.type==='purchase').reduce((s,t)=>s+t.qty,0);
+    const mSell = txs.filter(t=>t.type==='sale').reduce((s,t)=>s+t.qty,0);
+    const mRem  = mBuy - mSell;
+    const isCurrentMonth = month === currentMonth;
+
+    const rows = txs.map(t => {
+      const p = data.products.find(x => x.id === t.productId);
+      const isBuy = t.type === 'purchase';
+      return `<tr>
+        <td style="color:var(--text-dim);font-size:12px;white-space:nowrap">${t.date || '—'}</td>
+        <td>
+          <span style="font-weight:700;color:var(--foam)">${p ? p.name : '<span style="color:var(--red)">منتج محذوف</span>'}</span>
+          ${p ? `<span class="unit-badge">${p.unit}</span>` : ''}
+        </td>
+        <td>${p && p.category==='bar' ? `<span class="category-label cat-bar" style="font-size:10px">☕ بار</span>` : p ? `<span class="category-label cat-fridge" style="font-size:10px">🧊 ثلاجة</span>` : '—'}</td>
+        <td><span class="type-pill ${isBuy?'buy':'sell'}">${isBuy?'🛒 شراء':'💸 بيع'}</span></td>
+        <td class="${isBuy?'hist-qty-buy':'hist-qty-sell'}">${isBuy?'+':'-'}${t.qty}</td>
+        <td class="hist-note">${t.note || ''}</td>
+      </tr>`;
+    }).join('');
+
+    html += `
+      <div class="month-group" id="mg-${month}">
+        <div class="month-group-header" onclick="toggleMonth('${month}')">
+          <div class="month-group-title">
+            <span>📅</span>
+            <span>${monthName}</span>
+            ${isCurrentMonth ? `<span style="font-size:10px;background:rgba(200,146,58,0.3);color:var(--gold);padding:2px 8px;border-radius:10px">الشهر الحالي</span>` : ''}
+            <span class="count-badge">${txs.length} عملية</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div class="month-group-stats">
+              <div class="mg-stat"><div class="mg-stat-val" style="color:var(--green)">+${mBuy}</div><div class="mg-stat-lbl">شراء</div></div>
+              <div class="mg-stat"><div class="mg-stat-val" style="color:var(--red)">-${mSell}</div><div class="mg-stat-lbl">بيع</div></div>
+              <div class="mg-stat"><div class="mg-stat-val" style="color:${mRem>=0?'var(--gold)':'var(--red)'}">${mRem}</div><div class="mg-stat-lbl">متبقي</div></div>
+            </div>
+            <span class="collapse-arrow" id="arrow-${month}">▲</span>
+          </div>
+        </div>
+        <div class="month-group-body" id="body-${month}">
+          <table class="hist-table">
+            <thead><tr>
+              <th>التاريخ</th>
+              <th>المنتج</th>
+              <th>الفئة</th>
+              <th>النوع</th>
+              <th>الكمية</th>
+              <th>ملاحظة</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="hist-summary-footer">
+            <span style="color:var(--text-dim)">${txs.length} عملية</span>
+            <div class="hist-total-row">
+              <div class="hist-total-item"><span style="color:var(--green)">مشتريات: +${mBuy}</span></div>
+              <div class="hist-total-item"><span style="color:var(--red)">مبيعات: -${mSell}</span></div>
+              <div class="hist-total-item"><span style="color:var(--gold);font-weight:900">متبقي: ${mRem}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('historyLog').innerHTML = html;
+}
+
+function toggleMonth(month) {
+  const body = document.getElementById('body-' + month);
+  const arrow = document.getElementById('arrow-' + month);
+  const header = body.previousElementSibling;
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  if (arrow) arrow.textContent = collapsed ? '▼' : '▲';
+  if (header) header.classList.toggle('collapsed', collapsed);
+}
+
+function setHistFilter(key, val, btn) {
+  histFilter[key] = val;
+  // Update active buttons in the same group
+  const prefix = key === 'type' ? ['hf-all','hf-buy','hf-sell'] : ['hf-catall','hf-catbar','hf-catfr'];
+  prefix.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderHistory();
+}
+
+// ================== TABS ==================
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function filterProducts(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProducts();
+}
+
+// ================== LOGIN MODAL ==================
+function openLoginModal(afterLogin) {
+  pinBuffer = '';
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+
+  box.innerHTML = `
+    <div class="modal-title" style="justify-content:center;flex-direction:column;text-align:center;gap:6px">
+      <span style="font-size:36px">🔐</span>
+      <span>دخول الأدمن</span>
+    </div>
+    <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:8px">أدخل كود الدخول</p>
+    <div class="pin-row" id="pinDots">
+      ${[0,1,2,3].map(i=>`<div class="pin-dot" id="dot${i}"></div>`).join('')}
+    </div>
+    <div id="loginError" class="login-error"></div>
+    <div class="numpad">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="numpad-btn" onclick="pinPress('${n}')">${n}</button>`).join('')}
+      <button class="numpad-btn empty"></button>
+      <button class="numpad-btn" onclick="pinPress('0')">0</button>
+      <button class="numpad-btn del" onclick="pinDel()">⌫</button>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+    </div>
+  `;
+
+  overlay.style.display = 'flex';
+}
+
+function pinPress(n) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += n;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(() => checkPin(), 150);
+  }
+}
+
+function pinDel() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+  const err = document.getElementById('loginError');
+  if (err) err.textContent = '';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot' + i);
+    if (dot) dot.classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+
+function checkPin() {
+  const entered = hashStr(pinBuffer);
+  const err = document.getElementById('loginError');
+  const matchedAdmin = data.admins.find(a => a.pin === entered);
+
+  if (matchedAdmin) {
+    isAdmin = true;
+    currentAdmin = matchedAdmin;
+    closeModal();
+    updateAdminUI();
+    showToast(`✅ مرحباً بك، ${matchedAdmin.name}!`);
+  } else {
+    pinBuffer = '';
+    updatePinDots();
+    if (err) {
+      err.textContent = '❌ كود خاطئ، حاول مرة أخرى';
+      err.style.animation = 'none';
+      setTimeout(() => { if(err) err.style.animation = 'shake 0.3s ease'; }, 10);
+    }
+  }
+}
+
+// ================== MANAGE ADMINS MODAL ==================
+function openManageAdminsModal() {
+  if (!isAdmin || currentAdmin.id !== '1') return showToast('⚠️ هذه الصلاحية للمدير الأساسي فقط');
+  const box = document.getElementById('modalBox');
+  const list = data.admins.map(a => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
+      <div style="font-weight:bold">${a.name} ${a.id === '1' ? '<span style="color:var(--gold);font-size:11px;margin-right:6px">(المدير الأساسي)</span>' : ''}</div>
+      ${a.id === '1' ? `<span style="font-size:11px;color:var(--text-dim)">أساسي</span>` : `<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteAdmin('${a.id}')">حذف</button>`}
+    </div>
+  `).join('');
+
+  box.innerHTML = `
+    <div class="modal-title">👥 إدارة المشرفين</div>
+    <div style="max-height:200px;overflow-y:auto;margin-bottom:16px">${list}</div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-weight:bold;margin-bottom:10px;font-size:14px">➕ إضافة مشرف جديد</div>
+      <div class="form-row">
+        <div class="form-group"><label>الاسم</label><input id="newAdminName" type="text" placeholder="مثال: أحمد"></div>
+        <div class="form-group"><label>كلمة السر (4 أرقام)</label><input id="newAdminPin" type="password" maxlength="4" placeholder="••••"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="addAdmin()">✓ حفظ المشرف</button>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function addAdmin() {
+  if (!isAdmin || currentAdmin.id !== '1') return showToast('⚠️ هذه الصلاحية للمدير الأساسي فقط');
+  const name = document.getElementById('newAdminName').value.trim();
+  const pin = document.getElementById('newAdminPin').value.trim();
+  if (!name || pin.length !== 4) return showToast('⚠️ يرجى إدخال الاسم وكلمة سر من 4 أرقام بالضبط');
+  
+  if (data.admins.find(a => a.pin === hashStr(pin))) {
+    return showToast('⚠️ كلمة السر مستخدمة، يرجى اختيار أخرى');
+  }
+
+  data.admins.push({ id: Date.now().toString(), name, pin: hashStr(pin) });
+  save();
+  showToast('✅ تم إضافة المشرف بنجاح');
+  openManageAdminsModal();
+}
+
+function deleteAdmin(id) {
+  if (!isAdmin || currentAdmin.id !== '1') return showToast('⚠️ هذه الصلاحية للمدير الأساسي فقط');
+  if (id === '1') return showToast('⚠️ لا يمكن حذف المدير الأساسي');
+  if (currentAdmin.id === id) return showToast('⚠️ لا يمكنك حذف نفسك أثناء الدخول');
+  if (!confirm('تأكيد حذف هذا المشرف؟')) return;
+  data.admins = data.admins.filter(a => a.id !== id);
+  save();
+  showToast('🗑️ تم حذف المشرف');
+  openManageAdminsModal();
+}
+
+// ================== MODALS ==================
+function openModal(type) {
+  if (!isAdmin) { openLoginModal(); return; }
+
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+
+  if (type === 'product') {
+    box.innerHTML = `
+      <div class="modal-title">📦 إضافة منتج جديد</div>
+      <div class="form-group"><label>اسم المنتج</label><input id="mName" type="text" placeholder="مثال: لبن كامل الدسم"></div>
+      <div class="form-row">
+        <div class="form-group"><label>الفئة</label><select id="mCat"><option value="bar">☕ منتجات البار</option><option value="fridge">🧊 الثلاجة / سوفت درينك</option></select></div>
+        <div class="form-group"><label>وحدة القياس</label><input id="mUnit" type="text" placeholder="لتر / كيلو / علبة / زجاجة"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="addProduct()">✓ حفظ المنتج</button>
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      </div>`;
+  }
+
+  else if (type === 'purchase') {
+    const opts = data.products.map(p => `<option value="${p.id}">${p.name} (${p.unit})</option>`).join('');
+    box.innerHTML = `
+      <div class="modal-title">🛒 تسجيل شراء</div>
+      <div class="form-group"><label>المنتج</label><select id="mProd">${opts || '<option>لا توجد منتجات</option>'}</select></div>
+      <div class="form-row">
+        <div class="form-group"><label>الكمية</label><input id="mQty" type="number" min="0.1" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>التاريخ</label><input id="mDate" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+      </div>
+      <div class="form-group"><label>ملاحظة (اختياري)</label><input id="mNote" type="text" placeholder="مثال: أول الشهر / دفعة إضافية"></div>
+      <div class="modal-actions">
+        <button class="btn btn-green" onclick="addTransaction('purchase')">✓ تسجيل الشراء</button>
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      </div>`;
+  }
+
+  else if (type === 'sale') {
+    const opts = data.products.map(p => `<option value="${p.id}">${p.name} (${p.unit})</option>`).join('');
+    box.innerHTML = `
+      <div class="modal-title">💸 تسجيل مبيعات</div>
+      <div class="form-group"><label>المنتج</label><select id="mProd">${opts || '<option>لا توجد منتجات</option>'}</select></div>
+      <div class="form-row">
+        <div class="form-group"><label>الكمية</label><input id="mQty" type="number" min="0.1" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>التاريخ</label><input id="mDate" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+      </div>
+      <div class="form-group"><label>ملاحظة (اختياري)</label><input id="mNote" type="text" placeholder="اختياري"></div>
+      <div class="modal-actions">
+        <button class="btn btn-red" onclick="addTransaction('sale')">✓ تسجيل البيع</button>
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      </div>`;
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+// ================== ACTIONS ==================
+function addProduct() {
+  if (!isAdmin) return;
+  const name = document.getElementById('mName').value.trim();
+  const cat = document.getElementById('mCat').value;
+  const unit = document.getElementById('mUnit').value.trim();
+  if (!name || !unit) return showToast('⚠️ يرجى ملء جميع الحقول');
+  data.products.push({ id: Date.now().toString(), name, category: cat, unit });
+  save(); closeModal(); renderAll();
+  showToast('✅ تم إضافة المنتج بنجاح');
+}
+
+function addTransaction(type) {
+  if (!isAdmin) return;
+  const prodId = document.getElementById('mProd').value;
+  const qty = parseFloat(document.getElementById('mQty').value);
+  const date = document.getElementById('mDate').value;
+  const note = document.getElementById('mNote').value.trim();
+  if (!prodId || !qty || qty <= 0) return showToast('⚠️ يرجى إدخال المنتج والكمية');
+  if (type === 'sale') {
+    const { remain } = getStats(prodId);
+    if (qty > remain) return showToast(`⚠️ الكمية المطلوبة (${qty}) أكبر من المتاح (${remain})`);
+  }
+  data.transactions.push({ id: Date.now().toString(), type, productId: prodId, qty, date, month: currentMonth, note });
+  save(); closeModal(); renderAll();
+  showToast(type === 'purchase' ? '✅ تم تسجيل الشراء' : '✅ تم تسجيل البيع');
+}
+
+function deleteProduct(id) {
+  if (!isAdmin) return;
+  if (!confirm('هل تريد حذف هذا المنتج؟')) return;
+  data.products = data.products.filter(p => p.id !== id);
+  save(); renderAll();
+  showToast('🗑️ تم حذف المنتج');
+}
+
+function deleteTx(id) {
+  if (!isAdmin) return;
+  if (!confirm('هل تريد حذف هذه العملية؟')) return;
+  data.transactions = data.transactions.filter(t => t.id !== id);
+  save(); renderAll();
+  showToast('🗑️ تم حذف العملية');
+}
+
+// ================== TOAST ==================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>
