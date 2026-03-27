@@ -1,0 +1,9 @@
+- name: Upload artifact
+        uses: actions/upload-pages-artifact@v3 # <--- Make sure this is v3
+        with:
+          # Check if your folder is 'dist', 'build', or '.' 
+          path: './dist' 
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # <--- Make sure this is v4
