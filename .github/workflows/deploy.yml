@@ -1,9 +1,35 @@
-- name: Upload artifact
-        uses: actions/upload-pages-artifact@v3 # <--- Make sure this is v3
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"] # Change this to "master" if that is your main branch name
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# This fixes the Node.js 20 warning
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # If you are using a framework (like React or Vite), 
+      # ensure your build folder is named 'dist'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          # Check if your folder is 'dist', 'build', or '.' 
           path: './dist' 
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # <--- Make sure this is v4
+        uses: actions/deploy-pages@v4
