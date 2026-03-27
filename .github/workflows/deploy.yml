@@ -28,7 +28,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' 
+          # Use '.' to tell GitHub your index.html is in the root folder
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
