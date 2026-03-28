@@ -2,19 +2,26 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"] # Change this to "master" if that is your main branch name
+    branches: ["main"] # تأكد أن هذا هو اسم الفرع الرئيسي لديك
+
+# هذا الجزء يمنع تداخل العمليات ويحل مشكلة تعدد الـ artifacts
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# This fixes the Node.js 20 warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps:deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,13 +30,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # If you are using a framework (like React or Vite), 
-      # ensure your build folder is named 'dist'
+      # تأكد أن مجلد 'level bar' موجود فعلاً في جذر المشروع
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Use '.' to tell GitHub your index.html is in the root folder
-         path: './level bar'
+          path: './level bar'
 
       - name: Deploy to GitHub Pages
         id: deployment
