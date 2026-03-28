@@ -895,6 +895,9 @@
     <div id="manageAdminsBtn" class="admin-status" style="display:none; color:var(--blue); border-color:var(--blue); background:rgba(92,157,224,0.1);" onclick="openManageAdminsModal()">
       <span>👥</span><span>إدارة المشرفين</span>
     </div>
+    <div id="dataToolsBtn" class="admin-status" style="display:none; color:var(--green); border-color:var(--green); background:rgba(76,175,125,0.1);" onclick="openDataModal()">
+      <span>💾</span><span>البيانات</span>
+    </div>
     <div id="adminStatusBtn" class="admin-status logged-out" onclick="handleAdminClick()">
       <span id="adminIcon">🔒</span>
       <span id="adminLabel">دخول الأدمن</span>
@@ -1013,6 +1016,54 @@ function hashStr(str) {
 function init() {
   const saved = localStorage.getItem('barInventory');
   if (saved) { try { data = JSON.parse(saved); } catch(e) {} }
+
+  // Default products if empty
+  if (!data.products || data.products.length === 0) {
+    data.products = [
+        { "id": "1774635618069", "name": "بيبسي", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774635634309", "name": "سفن", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774635656173", "name": "ميريندا", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636346804", "name": "تويست", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636357277", "name": "ستينج", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636369860", "name": "فيوري", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636389372", "name": "فيروز", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636401852", "name": "ريد بول", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636667076", "name": "بيريل", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774636693108", "name": "لبن بارستا", "category": "bar", "unit": "لتر" },
+        { "id": "1774636710108", "name": "بن قهوة", "category": "bar", "unit": "كيلو" },
+        { "id": "1774636729996", "name": "شاي فتلة", "category": "bar", "unit": "فتلة" },
+        { "id": "1774636746948", "name": "ينسون", "category": "bar", "unit": "فتلة" },
+        { "id": "1774636782628", "name": "كوفي مكس", "category": "bar", "unit": "علبة" },
+        { "id": "1774637337596", "name": "مياه", "category": "fridge", "unit": "زجاجة" },
+        { "id": "1774637438684", "name": "اوريو", "category": "bar", "unit": "علبة" },
+        { "id": "1774637470716", "name": "سما نوتيلا", "category": "bar", "unit": "كيلو" },
+        { "id": "1774637490148", "name": "سما وايت شوكلت", "category": "bar", "unit": "كيلو" },
+        { "id": "1774637502708", "name": "سما بيستاشيو", "category": "bar", "unit": "كيلو" },
+        { "id": "1774637515436", "name": "لوتس اسبريد", "category": "bar", "unit": "كيلو" },
+        { "id": "1774637534388", "name": "فراولة", "category": "bar", "unit": "بورشن" },
+        { "id": "1774637547892", "name": "جوافة", "category": "bar", "unit": "بورشن" },
+        { "id": "1774637558396", "name": "كيوي", "category": "bar", "unit": "بورشن" },
+        { "id": "1774637568644", "name": "افوكاتو", "category": "bar", "unit": "بورشن" },
+        { "id": "1774637612452", "name": "ايس كريم فانيليا", "category": "bar", "unit": "علبة" },
+        { "id": "1774637622948", "name": "ايس كريم شوكلت", "category": "bar", "unit": "علبة" },
+        { "id": "1774637639348", "name": "ايس كريم فراولة", "category": "bar", "unit": "علبة" },
+        { "id": "1774637649292", "name": "ايس كريم مانجو", "category": "bar", "unit": "علبة" },
+        { "id": "1774637689604", "name": "عصير مانجو", "category": "bar", "unit": "لتر" },
+        { "id": "1774637704540", "name": "عصير برتقال", "category": "bar", "unit": "لتر" },
+        { "id": "1774637714788", "name": "سولو فراوله", "category": "bar", "unit": "لتر" },
+        { "id": "1774637722948", "name": "سولو كيوي", "category": "bar", "unit": "لتر" },
+        { "id": "1774637742156", "name": "سولو بلو بيري", "category": "bar", "unit": "لتر" },
+        { "id": "1774637771204", "name": "سولو اناناس", "category": "bar", "unit": "لتر" },
+        { "id": "1774637781260", "name": "سولو باشون", "category": "bar", "unit": "لتر" },
+        { "id": "1774637807948", "name": "سولو بطيخ", "category": "bar", "unit": "لتر" },
+        { "id": "1774637817444", "name": "مونين فانيليا", "category": "bar", "unit": "لتر" },
+        { "id": "1774637825924", "name": "مونين موخيتو", "category": "bar", "unit": "لتر" },
+        { "id": "1774637835588", "name": "مونين كارميل", "category": "bar", "unit": "لتر" },
+        { "id": "1774637916092", "name": "اندومي", "category": "bar", "unit": "كيس" },
+        { "id": "1774638058428", "name": "زبادي", "category": "bar", "unit": "علبة" }
+    ];
+  }
+
   if (!data.admins || data.admins.length === 0) {
     const oldHash = localStorage.getItem('barAdminHash') || DEFAULT_PASS_HASH;
     data.admins = [{ id: '1', name: 'عمر بارستا', pin: oldHash }];
@@ -1054,6 +1105,8 @@ function updateAdminUI() {
   btn.className = 'admin-status ' + (isAdmin ? 'logged-in' : 'logged-out');
   const manageBtn = document.getElementById('manageAdminsBtn');
   if (manageBtn) manageBtn.style.display = (isAdmin && currentAdmin.id === '1') ? 'flex' : 'none';
+  const dataBtn = document.getElementById('dataToolsBtn');
+  if (dataBtn) dataBtn.style.display = isAdmin ? 'flex' : 'none';
 
   // Action buttons
   const addProd = document.getElementById('addProductBtn');
@@ -1507,6 +1560,69 @@ function deleteAdmin(id) {
   save();
   showToast('🗑️ تم حذف المشرف');
   openManageAdminsModal();
+}
+
+// ================== DATA IMPORT / EXPORT ==================
+function openDataModal() {
+  if (!isAdmin) return;
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <div class="modal-title">💾 إدارة البيانات والتصدير</div>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">يمكنك هنا تحميل البيانات بالكامل ونقلها لجهاز آخر، ليظل كل شيء محفوظاً.</p>
+    
+    <div class="form-row" style="margin-bottom:20px;">
+      <button class="btn btn-primary" onclick="exportData()" style="justify-content:center;padding:16px;flex-direction:column;gap:8px">
+        <span style="font-size:24px">📥</span>
+        <span>حفظ (تصدير الملف)</span>
+      </button>
+      
+      <label class="btn btn-ghost" style="justify-content:center;padding:16px;flex-direction:column;gap:8px;text-align:center;cursor:pointer;display:flex">
+        <span style="font-size:24px">📤</span>
+        <span>استرجاع البيانات</span>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function exportData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+  const dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  const date = new Date().toISOString().split('T')[0];
+  dlAnchorElem.setAttribute("download", "bar_inventory_" + date + ".json");
+  dlAnchorElem.click();
+  showToast('✅ تم تحميل نسخة من البيانات بنجاح!');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      if (importedData && importedData.products) {
+        if (confirm('تنبيه هام جداً ⚠️: استرجاع البيانات سيقوم بمسح الجرد الحالي بالكامل واستبداله ببيانات الملف المرفوع! هل أنت متأكد من المتابعة؟')) {
+          data = importedData;
+          save();
+          renderAll();
+          closeModal();
+          showToast('✅ تم استرجاع البيانات بنجاح!');
+        }
+      } else {
+        showToast('❌ الملف المرفوع غير صالح للسيستم');
+      }
+    } catch (err) {
+      showToast('❌ حدث خطأ في قراءة الملف');
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ================== MODALS ==================
