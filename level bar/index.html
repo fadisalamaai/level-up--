@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>سيستم جرد البار</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -25,10 +25,20 @@
     --card-hover: rgba(61,31,10,0.9);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
 
   body {
     font-family: 'Cairo', sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
     background: var(--espresso);
     color: var(--cream);
     min-height: 100vh;
@@ -97,6 +107,11 @@
     display: flex;
     gap: 4px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+  }
+  .nav::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for nav */
   }
 
   .nav-btn {
@@ -236,7 +251,8 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 20px;
   }
 
@@ -355,6 +371,13 @@
     margin-bottom: 7px;
   }
 
+  input, select, textarea {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+  }
+
   input, select {
     width: 100%;
     padding: 11px 14px;
@@ -378,7 +401,7 @@
   .modal-actions .btn { flex: 1; justify-content: center; }
 
   /* Tabs content */
-  .tab-content { display: none; }
+  .tab-content { display: none; width: 100%; overflow-x: hidden; }
   .tab-content.active { display: block; }
 
   /* History log */
@@ -776,7 +799,8 @@
     border: 1px solid rgba(200,146,58,0.15);
     border-top: none;
     border-radius: 0 0 12px 12px;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     background: rgba(20,8,0,0.4);
   }
 
