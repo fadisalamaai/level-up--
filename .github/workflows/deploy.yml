@@ -21,7 +21,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps:deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }} # تم تغيير النقطتين إلى نقطة هنا
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,7 +30,6 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # تأكد أن مجلد 'level bar' موجود فعلاً في جذر المشروع
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
