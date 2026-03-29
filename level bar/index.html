@@ -844,6 +844,7 @@
 
   .type-pill.buy { background: rgba(76,175,125,0.15); color: var(--green); }
   .type-pill.sell { background: rgba(224,92,92,0.15); color: var(--red); }
+  .type-pill.waste { background: rgba(200,146,58,0.15); color: var(--gold); }
 
   .hist-note {
     font-size: 11px;
@@ -853,6 +854,7 @@
 
   .hist-qty-buy { color: var(--green); font-weight: 800; font-size: 14px; }
   .hist-qty-sell { color: var(--red); font-weight: 800; font-size: 14px; }
+  .hist-qty-waste { color: var(--gold); font-weight: 800; font-size: 14px; }
 
   .hist-summary-footer {
     display: flex;
@@ -933,11 +935,17 @@
 </div>
 
 <div class="nav">
-  <button class="nav-btn active" onclick="showTab('dashboard', this)">📊 الرئيسية</button>
-  <button class="nav-btn" onclick="showTab('products', this)">📦 المنتجات</button>
-  <button class="nav-btn" onclick="showTab('purchases', this)">🛒 المشتريات</button>
-  <button class="nav-btn" onclick="showTab('sales', this)">💸 المبيعات</button>
-  <button class="nav-btn" onclick="showTab('history', this)">📋 السجل</button>
+  <button id="navDashboardBtn" class="nav-btn active" onclick="showTab('dashboard', this)">📊 الرئيسية</button>
+  <button id="navProductsBtn"  class="nav-btn" onclick="showTab('products', this)">📦 المنتجات</button>
+  <button id="navPurchasesBtn" class="nav-btn" onclick="showTab('purchases', this)">🛒 المشتريات</button>
+  <button id="navSalesBtn"     class="nav-btn" onclick="showTab('sales', this)">💸 المبيعات</button>
+  <button id="navHistoryBtn"   class="nav-btn" onclick="showTab('history', this)">📋 السجل</button>
+  <button id="navAuditBtn"     class="nav-btn" onclick="showTab('audit', this)">⚖️ الجرد الميداني</button>
+  <button id="navShortagesBtn" class="nav-btn" onclick="showTab('shortages', this)" style="position:relative;">
+    ⚠️ النواقص
+    <span id="shortagesBadge" style="display:none; position:absolute; top:8px; left:8px; width:10px; height:10px; background:var(--red); border-radius:50%; box-shadow:0 0 6px var(--red);"></span>
+  </button>
+  <button id="navWasteBtn"     class="nav-btn" onclick="showTab('waste', this)">🗑️ الهالك</button>
 </div>
 
 <div class="main">
@@ -979,6 +987,38 @@
       <div id="addSaleBtn"></div>
     </div>
     <div id="salesLog"></div>
+  </div>
+
+  <!-- Waste -->
+  <div id="tab-waste" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">🗑️ الهالك (تسجيل وعرض)</div>
+      <div id="addWasteBtn"></div>
+    </div>
+    <div id="wasteLog"></div>
+  </div>
+
+  <!-- Audit (Variance Report) -->
+  <div id="tab-audit" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">⚖️ الجرد الميداني (تقرير العجز والزيادة)</div>
+      <button class="btn btn-ghost" onclick="renderAudit()">🔄 تحديث القائمة</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">قارن رصيد النظام (الدفتر) بالرصيد الموجود فعلياً حالياً. يُمكنك تسجيل العجز كـ "هالك" لتسوية الرصيد.</p>
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterAudit('all', this)">الكل</button>
+      <button class="filter-btn" onclick="filterAudit('bar', this)">☕ البار</button>
+      <button class="filter-btn" onclick="filterAudit('fridge', this)">🧊 الثلاجة</button>
+    </div>
+    <div id="auditTable"></div>
+  </div>
+
+  <!-- Shortages -->
+  <div id="tab-shortages" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">⚠️ النواقص المطلوبة</div>
+    </div>
+    <div id="shortagesContent"></div>
   </div>
 
   <!-- History -->
@@ -1093,13 +1133,19 @@ function init() {
 
   if (!data.admins || data.admins.length === 0) {
     const oldHash = localStorage.getItem('barAdminHash') || DEFAULT_PASS_HASH;
-    data.admins = [{ id: '1', name: 'عمر بارستا', pin: oldHash }];
+    data.admins = [{ id: '1', name: 'عمر بارستا', pin: oldHash, role: 'manager' }];
   } else {
     let mainAdmin = data.admins.find(a => a.id === '1');
+    let needsSave = false;
     if (mainAdmin && mainAdmin.name === 'المدير') {
       mainAdmin.name = 'عمر بارستا';
-      localStorage.setItem('barInventory', JSON.stringify(data));
+      needsSave = true;
     }
+    if (mainAdmin && !mainAdmin.role) {
+      data.admins.forEach(a => { a.role = 'manager'; });
+      needsSave = true;
+    }
+    if (needsSave) localStorage.setItem('barInventory', JSON.stringify(data));
   }
   const now = new Date();
   currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1128,29 +1174,49 @@ function changeMonth(dir) {
 function updateAdminUI() {
   const btn = document.getElementById('adminStatusBtn');
   document.getElementById('adminIcon').textContent = isAdmin ? '🔓' : '🔒';
-  document.getElementById('adminLabel').textContent = isAdmin ? (currentAdmin.name + ' · خروج') : 'دخول الأدمن';
+  document.getElementById('adminLabel').textContent = isAdmin ? (currentAdmin.name + ' · خروج') : 'دخول حساب';
   btn.className = 'admin-status ' + (isAdmin ? 'logged-in' : 'logged-out');
+  
+  const isManager = isAdmin && currentAdmin && currentAdmin.role === 'manager';
+
   const manageBtn = document.getElementById('manageAdminsBtn');
   if (manageBtn) manageBtn.style.display = (isAdmin && currentAdmin.id === '1') ? 'flex' : 'none';
   const dataBtn = document.getElementById('dataToolsBtn');
-  if (dataBtn) dataBtn.style.display = isAdmin ? 'flex' : 'none';
+  if (dataBtn) dataBtn.style.display = isManager ? 'flex' : 'none';
   const changePwBtn = document.getElementById('changePwBtn');
   if (changePwBtn) changePwBtn.style.display = isAdmin ? 'flex' : 'none';
+
+  const nDash = document.getElementById('navDashboardBtn'); if(nDash) nDash.style.display = isManager ? 'flex' : 'none';
+  const nProd = document.getElementById('navProductsBtn');  if(nProd) nProd.style.display = isManager ? 'flex' : 'none';
+  const nHist = document.getElementById('navHistoryBtn');   if(nHist) nHist.style.display = isManager ? 'flex' : 'none';
+  const nAudit = document.getElementById('navAuditBtn');    if(nAudit) nAudit.style.display = isManager ? 'flex' : 'none';
+
+  if (isAdmin && !isManager) {
+     const active = document.querySelector('.tab-content.active');
+     if (active && ['tab-dashboard', 'tab-products', 'tab-history', 'tab-audit'].includes(active.id)) {
+        showTab('sales', document.getElementById('navSalesBtn'));
+     }
+  } else if (!isAdmin && document.getElementById('navDashboardBtn').classList.contains('active')) {
+     showTab('dashboard', document.getElementById('navDashboardBtn'));
+  }
 
   // Action buttons
   const addProd = document.getElementById('addProductBtn');
   const addPurch = document.getElementById('addPurchaseBtn');
   const addSale = document.getElementById('addSaleBtn');
+  const addWaste = document.getElementById('addWasteBtn');
 
   if (isAdmin) {
-    addProd.innerHTML = `<button class="btn btn-primary" onclick="openModal('product')">+ إضافة منتج</button>`;
-    addPurch.innerHTML = `<button class="btn btn-green" onclick="openModal('purchase')">+ تسجيل شراء</button>`;
-    addSale.innerHTML = `<button class="btn btn-red" onclick="openModal('sale')">+ تسجيل بيع</button>`;
+    if(addProd) addProd.innerHTML = `<button class="btn btn-primary" onclick="openModal('product')">+ إضافة منتج</button>`;
+    if(addPurch) addPurch.innerHTML = `<button class="btn btn-green" onclick="openModal('purchase')">+ تسجيل شراء</button>`;
+    if(addSale) addSale.innerHTML = `<button class="btn btn-red" onclick="openModal('sale')">+ تسجيل بيع</button>`;
+    if(addWaste) addWaste.innerHTML = `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red)" onclick="openModal('waste')">+ إضافة هالك</button>`;
   } else {
-    const lockHint = `<span class="locked-hint" onclick="handleAdminClick()">🔒 يتطلب صلاحية الأدمن</span>`;
-    addProd.innerHTML = lockHint;
-    addPurch.innerHTML = lockHint;
-    addSale.innerHTML = lockHint;
+    const lockHint = `<span class="locked-hint" onclick="handleAdminClick()">🔒 يتطلب تسجيل الدخول</span>`;
+    if(addProd) addProd.innerHTML = lockHint;
+    if(addPurch) addPurch.innerHTML = lockHint;
+    if(addSale) addSale.innerHTML = lockHint;
+    if(addWaste) addWaste.innerHTML = lockHint;
   }
 
   renderAll();
@@ -1173,14 +1239,16 @@ function getStats(productId) {
   const monthTx = data.transactions.filter(t => t.month === currentMonth && t.productId === productId);
   const bought = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
   const sold = monthTx.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
-  return { bought, sold, remain: bought - sold };
+  const waste = monthTx.filter(t => t.type === 'waste').reduce((s, t) => s + t.qty, 0);
+  return { bought, sold, waste, remain: bought - sold - waste };
 }
 
 function getTotalStats() {
   const monthTx = data.transactions.filter(t => t.month === currentMonth);
   const totalBought = monthTx.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
   const totalSold = monthTx.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
-  return { totalBought, totalSold, totalRemain: totalBought - totalSold, products: data.products.length };
+  const totalWaste = monthTx.filter(t => t.type === 'waste').reduce((s, t) => s + t.qty, 0);
+  return { totalBought, totalSold, totalWaste, totalRemain: totalBought - totalSold - totalWaste, products: data.products.length };
 }
 
 // ================== RENDER ==================
@@ -1189,7 +1257,10 @@ function renderAll() {
   renderProducts();
   renderPurchases();
   renderSales();
+  renderWaste();
+  renderAudit();
   renderHistory();
+  renderShortages();
 }
 
 function renderDashboard() {
@@ -1203,8 +1274,8 @@ function renderDashboard() {
 
   // Rankings calculations
   const ranked = data.products.map(p => {
-    const { bought, sold } = getStats(p.id);
-    return { name: p.name, bought, sold, totalMove: bought + sold, unit: p.unit };
+    const { bought, sold, remain } = getStats(p.id);
+    return { name: p.name, bought, sold, remain, totalMove: bought + sold, unit: p.unit };
   });
 
   const topSold = [...ranked].sort((a,b) => b.sold - a.sold).filter(x => x.sold > 0).slice(0, 5);
@@ -1258,6 +1329,33 @@ function renderDashboard() {
   document.getElementById('dashboardTable').innerHTML = html;
 }
 
+function renderShortages() {
+  const ranked = data.products.map(p => {
+    const { remain } = getStats(p.id);
+    return { id: p.id, name: p.name, remain, category: p.category, unit: p.unit, minStock: p.minStock !== undefined ? p.minStock : 5 };
+  });
+  
+  const lowStock = [...ranked].filter(x => x.remain <= x.minStock).sort((a,b) => a.remain - b.remain);
+  const badge = document.getElementById('shortagesBadge');
+  
+  if (!lowStock.length) {
+    if (badge) badge.style.display = 'none';
+    document.getElementById('shortagesContent').innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>لا توجد نواقص في المخزن حالياً!</p></div>`;
+    return;
+  }
+  
+  if (badge) badge.style.display = 'block';
+  
+  const renderRankItem = (x) => `<div class="ranking-item" style="padding:16px; border-bottom:1px solid rgba(224,92,92,0.1);"><span style="color:var(--foam);font-weight:700;font-size:15px">${x.name} <span class="unit-badge">${x.unit}</span></span><span style="color:var(--red);font-weight:900;font-size:18px">المتبقي: ${x.remain}</span></div>`;
+  
+  document.getElementById('shortagesContent').innerHTML = `
+    <div class="ranking-card" style="border-color:var(--red);background:rgba(224,92,92,0.05); max-width:800px; margin:0 auto;">
+      <div class="ranking-title" style="color:var(--red);font-size:16px;border-bottom-color:rgba(224,92,92,0.3);">المنتجات التي تعدت الحد الأدنى للخطر (النواقص المطلوبة)</div>
+      ${lowStock.map(renderRankItem).join('')}
+    </div>
+  `;
+}
+
 function renderProducts() {
   const filtered = currentFilter === 'all' ? data.products : data.products.filter(p => p.category === currentFilter);
   const cats = [
@@ -1273,7 +1371,7 @@ function renderProducts() {
         <td><span class="product-name">${p.name}</span></td>
         <td><span class="category-label ${cat.cls}">${cat.label}</span></td>
         <td><span class="unit-badge" style="font-size:13px">${p.unit}</span></td>
-        <td>${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>` : `<span style="color:var(--text-dim);font-size:12px">🔒</span>`}</td>
+        <td>${(isAdmin && currentAdmin && currentAdmin.id === '1') ? `<button class="btn btn-ghost btn-sm" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>` : `<span style="color:var(--text-dim);font-size:12px">🔒</span>`}</td>
       </tr>`).join('');
     html += `<div class="table-wrap" style="margin-bottom:16px"><div class="table-head"><div class="section-title" style="font-size:14px">${cat.label}</div><span class="category-label ${cat.cls}">${prods.length} منتج</span></div><table><thead><tr><th>الاسم</th><th>الفئة</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   });
@@ -1286,7 +1384,7 @@ function renderPurchases() {
   if (!purchases.length) { document.getElementById('purchasesLog').innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>لا توجد مشتريات مسجلة هذا الشهر</p></div>`; return; }
   document.getElementById('purchasesLog').innerHTML = purchases.map(t => {
     const p = data.products.find(x => x.id === t.productId);
-    return `<div class="log-item"><div class="log-icon buy">🛒</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'شراء'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--green)">+${t.qty} ${p ? p.unit : ''}</div>${isAdmin ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
+    return `<div class="log-item"><div class="log-icon buy">🛒</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'شراء'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--green)">+${t.qty} ${p ? p.unit : ''}</div>${(isAdmin && currentAdmin && currentAdmin.id === '1') ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
   }).join('');
 }
 
@@ -1295,8 +1393,126 @@ function renderSales() {
   if (!sales.length) { document.getElementById('salesLog').innerHTML = `<div class="empty-state"><div class="icon">💸</div><p>لا توجد مبيعات مسجلة هذا الشهر</p></div>`; return; }
   document.getElementById('salesLog').innerHTML = sales.map(t => {
     const p = data.products.find(x => x.id === t.productId);
-    return `<div class="log-item"><div class="log-icon sell">💸</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'بيع'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--red)">-${t.qty} ${p ? p.unit : ''}</div>${isAdmin ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
+    return `<div class="log-item"><div class="log-icon sell">💸</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.note || 'بيع'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--red)">-${t.qty} ${p ? p.unit : ''}</div>${(isAdmin && currentAdmin && currentAdmin.id === '1') ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
   }).join('');
+}
+
+function renderWaste() {
+  const wastes = data.transactions.filter(t => t.type === 'waste' && t.month === currentMonth).reverse();
+  if (!wastes.length) { document.getElementById('wasteLog').innerHTML = `<div class="empty-state"><div class="icon">🗑️</div><p>لا توجد عمليات هالك مسجلة هذا الشهر</p></div>`; return; }
+  document.getElementById('wasteLog').innerHTML = wastes.map(t => {
+    const p = data.products.find(x => x.id === t.productId);
+    return `<div class="log-item"><div class="log-icon" style="background:rgba(200,146,58,0.15);color:var(--gold);">🗑️</div><div class="log-details"><div class="log-title">${p ? p.name : 'منتج محذوف'}</div><div class="log-meta">${t.wasteReason || 'سبب غير معروف'} · ${t.date}</div></div><div><div class="log-qty" style="color:var(--gold)">-${t.qty} ${p ? p.unit : ''}</div>${(isAdmin && currentAdmin && currentAdmin.id === '1') ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="deleteTx('${t.id}')">حذف</button>` : ''}</div></div>`;
+  }).join('');
+}
+
+let auditFilter = 'all';
+function filterAudit(cat, btn) {
+  auditFilter = cat;
+  document.querySelectorAll('#tab-audit .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAudit();
+}
+
+function renderAudit() {
+  const isManager = isAdmin && currentAdmin && currentAdmin.role === 'manager';
+  if (!isManager) return;
+
+  const filtered = auditFilter === 'all' ? data.products : data.products.filter(p => p.category === auditFilter);
+  if (!filtered.length) {
+    document.getElementById('auditTable').innerHTML = `<div class="empty-state"><p>لا توجد منتجات</p></div>`;
+    return;
+  }
+
+  const rows = filtered.map(p => {
+    const stats = getStats(p.id);
+    return `
+      <tr>
+        <td><span class="product-name" style="font-size:14px">${p.name} <span class="unit-badge">${p.unit}</span></span></td>
+        <td style="font-weight:900;color:var(--gold);font-size:16px">${stats.remain}</td>
+        <td>
+          <input type="number" step="0.1" class="audit-input" data-id="${p.id}" data-remain="${stats.remain}" placeholder="0" oninput="calcVariance(this)" style="width:80px;padding:8px;font-size:16px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:white;text-align:center;">
+        </td>
+        <td class="variance-cell" id="var-${p.id}" style="font-weight:900;font-size:15px;color:var(--text-dim)">-</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('auditTable').innerHTML = `
+    <div class="table-wrap">
+      <table style="min-width:500px">
+        <thead>
+          <tr>
+            <th>المنتج</th>
+            <th>رصيد الدفتر</th>
+            <th>الرصيد الفعلي</th>
+            <th>العجز / الزيادة</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:20px; text-align:left;">
+      <button class="btn btn-red" onclick="saveAuditToWaste()">💾 تسجيل العجز كهالك لتسوية الرصيد</button>
+    </div>
+  `;
+}
+
+function calcVariance(input) {
+  const id = input.getAttribute('data-id');
+  const remain = parseFloat(input.getAttribute('data-remain'));
+  const actual = parseFloat(input.value);
+  const cell = document.getElementById('var-' + id);
+  if (isNaN(actual)) {
+    cell.textContent = '-';
+    cell.style.color = 'var(--text-dim)';
+    return;
+  }
+  const diff = actual - remain;
+  if (diff < 0) {
+    cell.textContent = diff + ' (عجز)';
+    cell.style.color = 'var(--red)';
+  } else if (diff > 0) {
+    cell.textContent = '+' + diff + ' (زيادة)';
+    cell.style.color = 'var(--green)';
+  } else {
+    cell.textContent = 'متطابق ✓';
+    cell.style.color = 'var(--blue)';
+  }
+}
+
+function saveAuditToWaste() {
+  if (!confirm('هل تريد فعلاً تسجيل كميات العجز المدخلة كـ (هالك / عجز جرد) لضبط رصيد النظام؟ (لن يتم تسجيل الزيادات تلقائياً)')) return;
+  let added = 0;
+  const inputs = document.querySelectorAll('.audit-input');
+  inputs.forEach(input => {
+    const actual = parseFloat(input.value);
+    if (isNaN(actual)) return;
+    const remain = parseFloat(input.getAttribute('data-remain'));
+    const diff = actual - remain;
+    if (diff < 0) {
+      const qty = Math.abs(diff);
+      const prodId = input.getAttribute('data-id');
+      data.transactions.push({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        type: 'waste',
+        productId: prodId,
+        qty: qty,
+        date: new Date().toISOString().split('T')[0],
+        month: currentMonth,
+        note: 'تسوية آلية بعد الجرد الفعلي',
+        wasteReason: 'عجز في الجرد'
+      });
+      added++;
+    }
+  });
+  if (added > 0) {
+    save();
+    renderAll();
+    showToast(`✅ تم تسجيل ${added} صنف عجز في سجل الهالك`);
+  } else {
+    showToast('⚠️ لا توجد أصناف بها عجز لتسجيلها');
+  }
 }
 
 function renderHistory() {
@@ -1307,7 +1523,13 @@ function renderHistory() {
   let all = [...data.transactions].sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
   // Type filter
-  if (histFilter.type !== 'all') all = all.filter(t => t.type === histFilter.type);
+  if (histFilter.type !== 'all') {
+     if (histFilter.type === 'purchase' || histFilter.type === 'sale') {
+         all = all.filter(t => t.type === histFilter.type);
+     } else if (histFilter.type === 'waste') {
+         all = all.filter(t => t.type === 'waste');
+     }
+  }
 
   // Category filter
   if (histFilter.cat !== 'all') {
@@ -1333,11 +1555,10 @@ function renderHistory() {
   const statsBar = document.getElementById('histStatsBar');
   if (statsBar) {
     statsBar.innerHTML = `
-      <div class="hstat"><div class="hstat-val" style="color:var(--blue)">${allTx.length}</div><div class="hstat-lbl">إجمالي العمليات</div></div>
-      <div class="hstat"><div class="hstat-val" style="color:var(--green)">${totalBuy}</div><div class="hstat-lbl">إجمالي المشتريات</div></div>
-      <div class="hstat"><div class="hstat-val" style="color:var(--red)">${totalSell}</div><div class="hstat-lbl">إجمالي المبيعات</div></div>
-      <div class="hstat"><div class="hstat-val" style="color:var(--gold)">${totalBuy - totalSell}</div><div class="hstat-lbl">الرصيد الكلي</div></div>
-      <div class="hstat"><div class="hstat-val" style="color:var(--accent)">${allMonths.length}</div><div class="hstat-lbl">عدد الأشهر</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--blue)">${allTx.length}</div><div class="hstat-lbl">العمليات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--green)">${totalBuy}</div><div class="hstat-lbl">مشتريات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--red)">${totalSell}</div><div class="hstat-lbl">مبيعات</div></div>
+      <div class="hstat"><div class="hstat-val" style="color:var(--gold)">${allTx.filter(t=>t.type==='waste').reduce((s,t)=>s+t.qty,0)}</div><div class="hstat-lbl">الهالك</div></div>
     `;
   }
 
@@ -1368,6 +1589,12 @@ function renderHistory() {
     const rows = txs.map(t => {
       const p = data.products.find(x => x.id === t.productId);
       const isBuy = t.type === 'purchase';
+      const isWaste = t.type === 'waste';
+      const typeStr = isBuy ? '🛒 شراء' : (isWaste ? '🗑️ هالك' : '💸 بيع');
+      const pillCls = isBuy ? 'buy' : (isWaste ? 'waste' : 'sell');
+      const qtyCls = isBuy ? 'hist-qty-buy' : (isWaste ? 'hist-qty-waste' : 'hist-qty-sell');
+      const opSign = isBuy ? '+' : '-';
+      
       return `<tr>
         <td style="color:var(--text-dim);font-size:12px;white-space:nowrap">${t.date || '—'}</td>
         <td>
@@ -1375,9 +1602,9 @@ function renderHistory() {
           ${p ? `<span class="unit-badge">${p.unit}</span>` : ''}
         </td>
         <td>${p && p.category==='bar' ? `<span class="category-label cat-bar" style="font-size:10px">☕ بار</span>` : p ? `<span class="category-label cat-fridge" style="font-size:10px">🧊 ثلاجة</span>` : '—'}</td>
-        <td><span class="type-pill ${isBuy?'buy':'sell'}">${isBuy?'🛒 شراء':'💸 بيع'}</span></td>
-        <td class="${isBuy?'hist-qty-buy':'hist-qty-sell'}">${isBuy?'+':'-'}${t.qty}</td>
-        <td class="hist-note">${t.note || ''}</td>
+        <td><span class="type-pill ${pillCls}">${typeStr}</span></td>
+        <td class="${qtyCls}">${opSign}${t.qty}</td>
+        <td class="hist-note">${t.note || (isWaste ? t.wasteReason : '')}</td>
       </tr>`;
     }).join('');
 
@@ -1524,6 +1751,19 @@ function checkPin() {
     closeModal();
     updateAdminUI();
     showToast(`✅ مرحباً بك، ${matchedAdmin.name}!`);
+    
+    // Check global shortages
+    setTimeout(() => {
+       const ranked = data.products.map(p => ({ p, remain: getStats(p.id).remain }));
+       const critical = ranked.filter(x => x.remain <= (x.p.minStock !== undefined ? x.p.minStock : 5));
+       if (critical.length > 0) {
+         let msg = `⚠️ تنبيه عاجل: يوجد ${critical.length} صنف أقل من الحد المسموح:\n`;
+         critical.slice(0,5).forEach(x => msg += `- ${x.p.name} (المتبقي: ${x.remain})\n`);
+         if (critical.length > 5) msg += `...والمزيد. يرجى مراجعة قسم النواقص.`;
+         alert(msg);
+       }
+    }, 600);
+    
   } else {
     pinBuffer = '';
     updatePinDots();
@@ -1706,6 +1946,7 @@ function openModal(type) {
         <div class="form-group"><label>الفئة</label><select id="mCat"><option value="bar">☕ منتجات البار</option><option value="fridge">🧊 الثلاجة / سوفت درينك</option></select></div>
         <div class="form-group"><label>وحدة القياس</label><input id="mUnit" type="text" placeholder="لتر / كيلو / علبة / زجاجة"></div>
       </div>
+      <div class="form-group"><label>حد التنبيه (النواقص)</label><input id="mMinStock" type="number" min="0" value="5" placeholder="مثال: يظهر كنواقص إذا المتبقي أقل من هذا الحد"></div>
       <div class="modal-actions">
         <button class="btn btn-primary" onclick="addProduct()">✓ حفظ المنتج</button>
         <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
@@ -1744,6 +1985,31 @@ function openModal(type) {
       </div>`;
   }
 
+  else if (type === 'waste') {
+    const opts = data.products.map(p => `<option value="${p.id}">${p.name} (${p.unit})</option>`).join('');
+    box.innerHTML = `
+      <div class="modal-title">🗑️ تسجيل هالك</div>
+      <div class="form-group"><label>المنتج</label><select id="mProd">${opts || '<option>لا توجد منتجات</option>'}</select></div>
+      <div class="form-row">
+        <div class="form-group"><label>الكمية</label><input id="mQty" type="number" min="0.1" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>التاريخ</label><input id="mDate" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+      </div>
+      <div class="form-group"><label>سبب الهالك</label>
+        <select id="mWasteReason">
+          <option value="انتهاء صلاحية">انتهاء صلاحية</option>
+          <option value="كسر زجاجة / تلف">كسر زجاجة / تلف</option>
+          <option value="خطأ في التحضير">خطأ في التحضير</option>
+          <option value="تجربة أداء / تدريب">تجربة أداء / تدريب</option>
+          <option value="أخرى">أخرى (اكتب في الملاحظات)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>ملاحظة (اختياري)</label><input id="mNote" type="text" placeholder="اختياري"></div>
+      <div class="modal-actions">
+        <button class="btn btn-red" onclick="addTransaction('waste')">✓ تسجيل الهالك</button>
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      </div>`;
+  }
+
   overlay.style.display = 'flex';
 }
 
@@ -1756,8 +2022,10 @@ function addProduct() {
   const name = document.getElementById('mName').value.trim();
   const cat = document.getElementById('mCat').value;
   const unit = document.getElementById('mUnit').value.trim();
+  let minStock = parseInt(document.getElementById('mMinStock').value);
+  if (isNaN(minStock) || minStock < 0) minStock = 5;
   if (!name || !unit) return showToast('⚠️ يرجى ملء جميع الحقول');
-  data.products.push({ id: Date.now().toString(), name, category: cat, unit });
+  data.products.push({ id: Date.now().toString(), name, category: cat, unit, minStock });
   save(); closeModal(); renderAll();
   showToast('✅ تم إضافة المنتج بنجاح');
 }
@@ -1768,18 +2036,28 @@ function addTransaction(type) {
   const qty = parseFloat(document.getElementById('mQty').value);
   const date = document.getElementById('mDate').value;
   const note = document.getElementById('mNote').value.trim();
+  const reason = type === 'waste' ? document.getElementById('mWasteReason').value : '';
   if (!prodId || !qty || qty <= 0) return showToast('⚠️ يرجى إدخال المنتج والكمية');
-  if (type === 'sale') {
+  if (type === 'sale' || type === 'waste') {
     const { remain } = getStats(prodId);
-    if (qty > remain) return showToast(`⚠️ الكمية المطلوبة (${qty}) أكبر من المتاح (${remain})`);
+    if (qty > remain) return showToast(`⚠️ الكمية المطلوبة للخسارة/البيع (${qty}) أكبر من المتاح (${remain})`);
   }
-  data.transactions.push({ id: Date.now().toString(), type, productId: prodId, qty, date, month: currentMonth, note });
+  data.transactions.push({ id: Date.now().toString(), type, productId: prodId, qty, date, month: currentMonth, note, wasteReason: reason });
   save(); closeModal(); renderAll();
-  showToast(type === 'purchase' ? '✅ تم تسجيل الشراء' : '✅ تم تسجيل البيع');
+  const msg = type === 'purchase' ? 'تم تسجيل الشراء' : (type === 'waste' ? 'تم تسجيل الهالك' : 'تم تسجيل البيع');
+  showToast('✅ ' + msg);
+
+  const pData = data.products.find(p => p.id === prodId);
+  const minS = (pData && pData.minStock !== undefined) ? pData.minStock : 5;
+  const newStats = getStats(prodId);
+  if (newStats.remain <= minS) {
+    const pName = pData?.name || '';
+    setTimeout(() => alert(`⚠️ تنبيه: المنتج "${pName}" قارب على الدخول في مستوى الخطر! المتبقي في المخزن فقط: ${newStats.remain}`), 300);
+  }
 }
 
 function deleteProduct(id) {
-  if (!isAdmin) return;
+  if (!isAdmin || !currentAdmin || currentAdmin.id !== '1') return showToast('⚠️ هذه الصلاحية للمدير الأساسي فقط');
   if (!confirm('هل تريد حذف هذا المنتج؟')) return;
   data.products = data.products.filter(p => p.id !== id);
   save(); renderAll();
@@ -1787,7 +2065,7 @@ function deleteProduct(id) {
 }
 
 function deleteTx(id) {
-  if (!isAdmin) return;
+  if (!isAdmin || !currentAdmin || currentAdmin.id !== '1') return showToast('⚠️ هذه الصلاحية للمدير الأساسي فقط');
   if (!confirm('هل تريد حذف هذه العملية؟')) return;
   data.transactions = data.transactions.filter(t => t.id !== id);
   save(); renderAll();
